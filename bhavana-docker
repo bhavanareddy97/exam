@@ -1,0 +1,22 @@
+node{
+  stage('SCM Checkout'){
+    git 'https://github.com/bhavanareddy97/exam'
+  }
+  stage('Mvn Package'){    
+    sh label: '', script:  '/opt/maven/bin/mvn clean package'
+  }
+  stage('Build Docker Image'){
+  sh 'docker build -t bhavanareddy97/my-app:2.0.0 .'
+  } 
+  stage('push Docker Image'){
+  withCredentials([string(credentialsId: 'docker-pwd', variable: 'dockerhubpwd')]) {
+      sh "docker login -u bhavanareddy97 -p ${dockerhubpwd}" 
+  }
+  sh 'docker push bhavanareddy97/my-app:2.0.0'
+  }
+  stage('Run Container on Dev Server'){
+      sshagent(['Bhavana_is_Greater']) {
+      sh label: '', script: 'ssh -o "StrictHostKeyChecking no" root@192.168.7.110 \'docker run -p 8086:8080 -d bhavanareddy97/my-app:2.0.0\''
+   }
+  }
+}
